@@ -1,0 +1,8 @@
+.card_container{
+    border-radius: 5px;
+    background-color: #ebc3a9;
+    margin: 25;
+    padding: 15;
+    position: relative;
+    box-shadow: 2px 2px 2px #f25c55;
+}
