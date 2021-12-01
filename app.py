@@ -3,7 +3,8 @@ import plotly.express as px
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import dash_table
+# import dash_table
+from dash import dash_table
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 from datetime import date
@@ -57,7 +58,8 @@ number_fig.update_layout(
     font=dict(
         size=20,
         color="DarkGreen"
-    )
+    ),
+    title_x=0.4
 )
 #Product Sales vs Income
 conditions = [
@@ -129,13 +131,20 @@ age_product_fig.update_layout(
     font=dict(
         size=20,
         color="DarkGreen"
-    )
+    ),
+    title_x=0.35
 )
 # Sales by Channel Divided by Age
+#new data set for column name change to make chart cleaner
+age_gen_data = data.rename(columns={
+    'NumWebPurchases':'Website',
+    'NumCatalogPurchases': 'Catalog', 
+    'NumStorePurchases':'Store'
+})
 #Generation
-tidydf_gen = data.melt( 
+tidydf_gen = age_gen_data.melt( 
             id_vars = 'Gen',
-            value_vars = ['NumWebPurchases','NumCatalogPurchases', 'NumStorePurchases'],
+            value_vars = ['Website','Catalog', 'Store'],
             var_name = 'channel', 
             value_name = '# of Sales')
 tidydf_gen2= pd.DataFrame(tidydf_gen.groupby(['Gen','channel'])['# of Sales'].sum()).reset_index()
@@ -149,10 +158,10 @@ sales_by_channel_gen_fig = px.bar(tidydf_gen2, x="channel", y="# of Sales",
 #Age
 age_bins = [18, 30, 45, 85]
 age_name = ['18-30', '30-45','45-85']
-data['agebracket'] = pd.cut(data['Age'], age_bins, labels=age_name)
-tidydf_age = data.melt( 
+age_gen_data['agebracket'] = pd.cut(data['Age'], age_bins, labels=age_name)
+tidydf_age = age_gen_data.melt( 
             id_vars = 'agebracket',
-            value_vars = ['NumWebPurchases','NumCatalogPurchases', 'NumStorePurchases'],
+            value_vars = ['Website','Catalog', 'Store'],
             var_name = 'channel', 
             value_name = '# of Sales')
 tidydf_age2= pd.DataFrame(tidydf_age.groupby(['agebracket','channel'])['# of Sales'].sum()).reset_index()
@@ -178,16 +187,25 @@ sales_by_channel_age_fig.update_layout(
     )
 )
 # Bubble Chart Fig
-bubble_chart_fig = go.Figure(data=[go.Scatter(
-    x=data['Country'], y=data['Total_purchase'],
-    mode='markers')
-])
-bubble_chart_fig = px.scatter_geo(data, locations="Country", color="Country",
-                     hover_name="Country", size="Total_purchase",
-                     projection="natural earth", title='Bubble Chart of Product Sales by Country',
+data['product_sales']=data.MntWines + data.MntFruits + data.MntMeatProducts + data.MntFishProducts + data.MntSweetProducts + data.MntGoldProds 
+groupby_country = data.groupby(['Country'])['product_sales'].sum().reset_index()
+groupby_country['sales_percent']=round(100*groupby_country['product_sales']/sum(groupby_country['product_sales']),2)
+country_count = groupby_country['Country'].value_counts()
+country_count = country_count.reset_index().rename(columns={'index':'Country', 'Country':'Count'})
+
+new_bubble_chart_fig = px.scatter_geo(groupby_country, 
+                     locations='Country',
+                     color='Country',
+                     locationmode='country names', 
+                     size='sales_percent',
+                     size_max=50,
                      color_discrete_map={'Spain':'DarkGreen', 'USA':'DarkSeaGreen', 'India':'wheat', 'Saudi Arabia':'crimson', 'Canada':'goldenrod', 'Germany':'Tomato', 'Australia':'lightslategray', 'Mexico':'saddlebrown'})
-bubble_chart_fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)','paper_bgcolor': 'rgba(0, 0, 0, 0)'})
-bubble_chart_fig.update_layout(
+new_bubble_chart_fig.update_layout(
+        title_text = 'Total Product Sales by Country (in %)',
+        title_x=0.45,
+        showlegend = True)
+new_bubble_chart_fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)','paper_bgcolor': 'rgba(0, 0, 0, 0)'})
+new_bubble_chart_fig.update_layout(
     font=dict(
         size=20,
         color="DarkGreen"
@@ -197,7 +215,6 @@ bubble_chart_fig.update_layout(
 
 # HTML Styles: https://www.w3schools.com/html/html_styles.asp
 # Source: https://github.com/PacktPublishing/Interactive-Dashboards-and-Data-Apps-with-Plotly-and-Dash 
-
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -228,21 +245,21 @@ app.layout = html.Div(children=[
             #CARD #1
             html.Div(children=[
                 html.H3("Wine Sales", style={'textAlign':'center', "margin-bottom":"0px", 'color': "goldenrod", 'fontSize': '30px', 'width': '100%', 'display': 'inline-block'}),
-                html.P(wines_sales, style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
+                html.P(f"${wines_sales}", style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
             ],style={'width':'23%','display': 'inline-block','background': 'wheat','textAlign':'center', 
                     'border-style':'solid','border-color':'wheat', 'border-radius':'20px','border-width':'5px',
                     'margin-bottom':'15px','margin-top':'15px','margin-left':'15px', 'height':'70%'}),
             #CARD #2
             html.Div(children=[
                 html.H3("Fruit Sales", style={'textAlign':'center', "margin-bottom":"0px", 'color': "goldenrod", 'fontSize': '30px', 'width': '100%', 'display': 'inline-block'}),
-                html.P(fruits_sales, style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%','display': 'block'})
+                html.P(f"${fruits_sales}", style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%','display': 'block'})
             ],style={'width':'23%','display': 'inline-block','background': 'wheat','textAlign':'center', 
                     'border-style':'solid','border-color':'wheat', 'border-radius':'20px','border-width':'5px',
                     'margin-bottom':'15px','margin-top':'15px','margin-left':'15px', 'height':'70%'}),
             #CARD #3
             html.Div(children=[
                 html.H3("Meat Sales", style={'textAlign':'center', "margin-bottom":"0px", 'color': "goldenrod", 'fontSize': '30px', 'width': '100%', 'display': 'inline-block'}),
-                html.P(meat_sales, style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
+                html.P(f"${meat_sales}", style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
             ],style={'width':'23%','display': 'inline-block','background': 'wheat','textAlign':'center', 
                     'border-style':'solid','border-color':'wheat', 'border-radius':'20px','border-width':'5px',
                     'margin-bottom':'15px','margin-top':'15px','margin-left':'15px', 'height':'70%'}),
@@ -260,80 +277,55 @@ app.layout = html.Div(children=[
             #CARD #5
             html.Div(children=[
                 html.H3("Fish Sales", style={'textAlign':'center', "margin-bottom":"0px", 'color': "goldenrod", 'fontSize': '30px', 'width': '100%', 'display': 'inline-block'}),
-                html.P(fish_sales, style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
+                html.P(f"${fish_sales}", style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
             ],style={'width':'23%','display': 'inline-block','background': 'wheat','textAlign':'center', 
                     'border-style':'solid','border-color':'wheat', 'border-radius':'20px','border-width':'5px',
                     'margin-bottom':'15px','margin-top':'15px','margin-left':'15px', 'height':'70%', 'height':'70%'}),
             #CARD #6
             html.Div(children=[
                 html.H3("Sweets Sales", style={'textAlign':'center', "margin-bottom":"0px", 'color': "goldenrod", 'fontSize': '30px', 'width': '100%', 'display': 'inline-block'}),
-                html.P(sweets_sales, style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
+                html.P(f"${sweets_sales}", style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
             ],style={'width':'23%','display': 'inline-block','background': 'wheat','textAlign':'center', 
                     'border-style':'solid','border-color':'wheat', 'border-radius':'20px','border-width':'5px',
                     'margin-bottom':'15px','margin-top':'15px','margin-left':'15px', 'height':'70%'}),
             #CARD #7
             html.Div(children=[
                 html.H3("Gold Sales", style={'textAlign':'center', "margin-bottom":"0px", 'color': "goldenrod", 'fontSize': '30px', 'width': '100%', 'display': 'inline-block'}),
-                html.P(gold_sales, style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
+                html.P(f"${gold_sales}", style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkseagreen", 'fontSize': '45px', 'width': '100%'})
             ],style={'width':'23%','display': 'inline-block','background': 'wheat','textAlign':'center', 
                     'border-style':'solid','border-color':'wheat', 'border-radius':'20px','border-width':'5px',
                     'margin-bottom':'15px','margin-top':'15px','margin-left':'15px', 'height':'70%'}),
             #CARD #8 (Total Sales)
             html.Div(children=[
                 html.H3("Total Sales", style={'textAlign':'center', "margin-bottom":"0px", 'color': "goldenrod", 'fontSize': '30px', 'width': '100%', 'display': 'inline-block'}),
-                html.P(total_sales, style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkgreen", 'fontSize': '45px', 'width': '100%'})
+                html.P(f"${total_sales}", style={'textAlign':'center', "margin-bottom":"0px", "margin-top":"8px", 'color': "darkgreen", 'fontSize': '45px', 'width': '100%'})
             ],style={'width':'23%','display': 'inline-block','background': 'wheat','textAlign':'center', 
                     'border-style':'solid','border-color':'wheat', 'border-radius':'20px','border-width':'5px',
                     'margin-right':'15px','margin-bottom':'15px','margin-top':'15px','margin-left':'15px', 'height':'70%'})
             ],style={'width':'100%','display': 'inline-block','background': 'whitesmoke', 'height':'200px'}),
         ],style={'width':'66%','display': 'inline-block','vertical-align': 'top'}),
-        # # Total Right Side
+        # Total Right Side
         html.Div(children=[
             dcc.Graph(figure=number_fig,style={'width': '100%', 'display': 'inline-block','vertical-align': 'top'})
             ],style={'width':'33%','display': 'inline-block'}
             )],style={'width':'100%','display': 'inline-block','background': 'whitesmoke','vertical-align': 'top'}),
 
-    # CHART DIV - LEFT
+    # SECOND ROW : BARCHART AND MAP
     html.Div(children=[
         dcc.Graph(figure=sales_income_fig,style={'width': '66%', 'display': 'inline-block'}),
-        dcc.Graph(figure=bubble_chart_fig,style={'width': '33%', 'display': 'inline-block'})
+        dcc.Graph(figure=new_bubble_chart_fig,style={'width': '33%', 'display': 'inline-block'})
     ]),
 
-    # html.Div(
-    #         children=[
-    #             html.Div(
-    #             children = dcc.Graph(figure=sales_by_channel_age_fig,style={'width': '33%', 'display': 'inline-block'}),
-    #             style={'width': '50%', 'display': 'inline-block'},
-    #             ),
-    #             html.Div(
-    #             children = dcc.Graph(figure=sales_by_channel_age_fig,style={'width': '33%', 'display': 'inline-block'}),
-    #             style={'width': '50%', 'display': 'inline-block'},
-    #             ),
-    #             html.Div(
-    #             children = dcc.Graph(figure=sales_by_channel_age_fig,style={'width': '33%', 'display': 'inline-block'}),
-    #             style={'width': '50%', 'display': 'inline-block'},
-    #             ),
-    #             html.Div(
-    #             children = dcc.Graph(figure=sales_by_channel_age_fig,style={'width': '33%', 'display': 'inline-block'}),
-    #             style={'width': '50%', 'display': 'inline-block'},
-    #             ),
-    #      ],
-    #     className = 'double-graph',
-    # ),
-# CHART DIV - LEFT
-    # html.Div(children=[
+# THIRD ROW: SALES BY CHANNEL AND TREEMAP
     html.Div(children=[
         dcc.Dropdown(id='my_dropdown',options=product_dropdown, value='',
                     style={'width': '40%', 'display': 'inline-block', 'margin-left':'980px'}, placeholder='Please select a product type')
-        # ,
-        #     html.Div(id='dd-output-container',style={'width': '33%', 'margin-left':'2000px'}),
     ]),
     html.Div(children=[
         dcc.Graph(figure=sales_by_channel_age_fig,style={'width': '33%', 'display': 'inline-block'}),
         dcc.Graph(figure=sales_by_channel_gen_fig,style={'width': '33%', 'display': 'inline-block'}),
         dcc.Graph(figure=age_product_fig, id= 'the_graph',style={'width': '33%', 'display': 'inline-block'})
     ])
-    # ])
 
 ], style={'background':'whitesmoke'})
 
@@ -358,20 +350,12 @@ def update_output(my_dropdown):
         ]
     age_product_fig = px.treemap(chart_df, path=['Gen'], values=my_dropdown,color=chart_df['Gen'], title='Product Purchases by Age',color_discrete_map={'Boomers':'DarkGreen', 'Gen x':'wheat', 'Millennials':'DarkSeaGreen'})
     age_product_fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)','paper_bgcolor': 'rgba(0, 0, 0, 0)'})
+    # return 'You have selected "{}"'.format(my_dropdown)
     return age_product_fig
 
 
 if __name__ == '__main__':
     app.run_server(debug=True)
 
-# Uncomment the following two lines if using Jupyter Notebook
-# if __name__ == '__main__':
-#     app.run_server(mode='inline', height= 300, width = '80%')
-
-# modes: external, inline, or jupyterlab
-
-# Commnet the following two lines if using Jupyter Notebook
-# if __name__ == '__main__':
-#     app.run_server(debug=True)
 
 # #############################################################################
