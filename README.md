@@ -1,4 +1,4 @@
-# Marking-Analytics-Dashboard
+# Marking and Product Analytics Dashboard
 
 Group Members: Rebecca Bland, Abhinav Chadha, Sanjeet Walia, Puneet Singh Maini, Rizabek Zhumkenov, Sumeet Duddagi
 
