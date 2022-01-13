@@ -1,7 +1,5 @@
 # Marketing and Product Analytics Dashboard
 
-Group Members: Rebecca Bland, Abhinav Chadha, Sanjeet Walia, Puneet Singh Maini, Rizabek Zhumkenov, Sumeet Duddagi
-
 Marketing Analytics Campaign Analysis and Dashboard
 
 Data Source: Maven Analytics (https://www.mavenanalytics.io/data-playground?search=marketing)
