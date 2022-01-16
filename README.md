@@ -4,6 +4,8 @@ Marketing Analytics Campaign Analysis and Dashboard
 
 Data Source: Maven Analytics (https://www.mavenanalytics.io/data-playground?search=marketing)
 
+![](Dashboard-Preview.png)
+
 Objectives:
 - Describe high level consumer behavior via dollars spent per product category, dollars spent overall, total number of purchases, and the ratio of purchases for each category.
 - Show how income level impacts product category selection and purchases.
